@@ -25,16 +25,6 @@ library(GenomicRanges)
 ```
 
 ```{r}
-Sys.setenv(GITHUB_PAT = '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')
-# for manhattan plots
-devtools::source_gist('https://gist.github.com/TemiPete/250d9922b9516691f83bb1fd999a3ccc')
-devtools::source_gist('https://gist.github.com/hakyim/38431b74c6c0bf90c12f')
-devtools::source_gist('https://gist.github.com/hakyim/5d2251ea1a86009499e4ffdf47fe2735')
-devtools::source_gist('https://gist.github.com/TemiPete/e7214eb308c4116e2f10ee96401be0c2')
-devtools::source_gist('https://gist.github.com/TemiPete/b309a46e25ecec93127fb6756e68fb14')
-```
-
-```{r}
 tdate <- '2023-08-17' # modified
 tdate <- '2024-04-17'
 
