@@ -1,3 +1,4 @@
-files/**
-models/**
-software/**
+files/*
+models/*
+software/*
+data/*

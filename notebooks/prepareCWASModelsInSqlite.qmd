@@ -13,7 +13,9 @@ fig-format: svg
 
 Here, I explore Baca's CWAS models, and create necessary DBs suitable in a Predixcan framework
 
-- I create for both hg19 and hg38
+```{r}
+setwd('/project/haky/users/temi/projects/Enpact/notebooks')
+```
 
 ```{r}
 library(data.table)
@@ -25,7 +27,7 @@ library(GenomicRanges)
 ```
 
 ```{r}
-tdate <- '2023-08-17' # modified
+# tdate <- '2023-08-17' # modified
 tdate <- '2024-04-17'
 
 base_dir <- '/project2/haky/temi/projects/TFXcan/baca_cwas'
@@ -282,11 +284,18 @@ baca_extra %>% dplyr::select(locus, measure, transcription_factor, n_snps_in_win
 ```
 
 ```{r}
+weights_dt %>% 
+    dplyr::mutate(varID = paste0(chrom, '_', position, '_', a1, '_', a2, sep=''), gene = locus) %>%
+    dplyr::select(gene, rsid, varID, ref_allele=a1, eff_allele=a2, weight=all_of('lasso')) %>%
+    dplyr::mutate(varID = gsub("chr", '', varID))
+```
+
+```{r}
 baca_weights_list <- purrr::map(.x=baca_models, function(each_m){
     model_weights <- weights_dt %>% 
         dplyr::mutate(varID = paste0(chrom, '_', position, '_', a1, '_', a2, sep=''), gene = locus) %>%
         dplyr::select(gene, rsid, varID, ref_allele=a1, eff_allele=a2, weight=all_of(each_m)) %>% 
-        as.data.frame()
+        dplyr::mutate(varID = gsub("chr", '', varID))
 
     ## hg38
     edt <- baca_extra %>% 
@@ -294,6 +303,9 @@ baca_weights_list <- purrr::map(.x=baca_models, function(each_m){
         tidyr::pivot_wider(names_from = 'measure', values_from = each_m) %>% 
         dplyr::relocate(c(pval, rsq), .after = locus) %>%
         dplyr::filter(locus %in% weights_dt$locus)
+
+    model_weights <- model_weights %>%
+        dplyr::mutate()
 
     each_db <- DBI::dbConnect(RSQLite::SQLite(), glue('{db_folder}/baca_cwas_{each_m}.hg38.db'))
     dbWriteTable(each_db, "extra", baca_extra, overwrite=T)
@@ -306,6 +318,26 @@ baca_weights_list <- purrr::map(.x=baca_models, function(each_m){
 # names(baca_weights_list) <- baca_models
 ```
 
+## Predict CWAS scores using these models
+
+```{r}
+db_folder <- '/project/haky/users/temi/projects/Enpact/models/cwas/db_folder'
+txt_genotypes <- '/project2/haky/Data/baca_cwas/vcfs/hg38/formatted_geno/all_chrs.text_dosages.txt.gz'
+txt_samples <- '/project2/haky/Data/baca_cwas/vcfs/hg38/formatted_geno/samples.text_dosages.txt'
+exec_file <- '/beagle3/haky/users/temi/software/MetaXcan/software/Predict.py'
+output_folder <- "/project/haky/users/temi/projects/Enpact/data/baca_cwas/output"
+if(!dir.exists(output_folder)){dir.create(output_folder, recursive = T)}
+```
+
+```{r}
+cmd <- glue('sbatch {data_dir}/src/predictCWASscores.sbatch {db_folder} {txt_genotypes} {txt_samples} {exec_file} {output_folder}')
+cmd
+```
+
+```{r}
+system(cmd)
+```
+
 
 
 
@@ -313,8 +345,6 @@ baca_weights_list <- purrr::map(.x=baca_models, function(each_m){
 ```{r}
 knitr::knit_quit()
 ```
-
-
 
 
 ```{r}
