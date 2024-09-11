@@ -61,5 +61,6 @@ for(i in seq_along(models)){
     rownames(ev) <- c('train', 'test')
     print(ev)
     ev %>%
+        tibble::rownames_to_column('data') %>%
         data.table::fwrite(glue('{opt$eval_output}.{names(models)[i]}.eval.txt.gz'), sep='\t', compress='gzip', quote=F, row.names=F)
 }
