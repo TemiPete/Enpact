@@ -72,9 +72,7 @@ idt <- mt %>%
 ```
 
 ```{r}
-
 ldt <- list()
-
 for(i in seq_along(idt)){
     fdt <- idt[[i]]
     tissuename <- unique(fdt$Tissue_type)
@@ -91,7 +89,6 @@ for(i in seq_along(idt)){
         ldt[[as.name(tfname)]][['peakFiles']][[as.name(tissuename)]] <-  paste0(dcids, '_sort_peaks.narrowPeak.bed')
     }
 }
-
 ```
 
 ```{r}
@@ -112,15 +109,10 @@ names(mdt) <- ndt
 common_names <- intersect(names(ldt), names(mdt))
 peakslist <- ldt[common_names]
 motifslist <- mdt[common_names]
-```
-
-
-```{r}
 enpact_models_config <- mapply(c, peakslist, motifslist)
 ```
 
 ```{r}
-
 # Modified from: https://stackoverflow.com/questions/74655073/how-to-effectively-join-two-lists-elementwise-by-element-name
 cat_lists <- function(list1, list2) {  
   keys <- unique(c(names(list1), names(list2)))
@@ -130,7 +122,6 @@ cat_lists <- function(list1, list2) {
 }
 
 enlist <- purrr::reduce(list(motifslist, peakslist), cat_lists)
-# minimal_ex <- base::Filter(Negate(is.null), minimal_ex)
 ```
 
 -- Filter for the following TFs: AR, FOXA1, HOXB13, and GATA2 in prostate tissues
@@ -153,12 +144,9 @@ These files created and saved are used to train the DL-based Enpact models.
 Steps required to train Enpact models are [here](https://github.com/hakyimlab/TFPred-snakemake). There is a minimal example to follow. As well as the necessary scripts to run the training for AR, FOXA1, HOXB13, and GATA2 in prostate tissues.
 
 # Prepare Baca's CWAS models in sqlite and create the necessary databases
-```{r}
-transcription_factor <- 'AR'
-```
-
 -- the CWAS weights for AR
 ```{r}
+transcription_factor <- 'AR'
 ar_zip <- '/project2/haky/Data/baca_cwas/cwas_weights/AR.zip'
 print(file.exists(ar_zip))
 ```
@@ -179,7 +167,6 @@ if(!dir.exists(glue('{output_dir}/{transcription_factor}'))){
 ar_files <- list.files(glue('{output_dir}/{transcription_factor}'))
 ar_files_locus <- sapply(strsplit(x=ar_files, split='\\.'), getElement, 1)
 ar_files_locus[1:5]
-
 ```
 
 -- read weights; Next, read the files `.wgt` files
