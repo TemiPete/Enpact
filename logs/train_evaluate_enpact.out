@@ -1,0 +1,12 @@
+Wed Sep 11 14:46:56 CDT 2024
+Working directory is /project/haky/users/temi/projects/Enpact/notebooks/run
+Jobid: 23450847
+Running on host midway3-0012.rcc.local
+Starting to run
+Evaluating model
+Model found
+WARNING: ignoring environment value of R_HOME
+   pp_auc       pp_var       low       upp
+1:  0.966 6.791186e-07 0.9640198 0.9672501
+2:  0.963 1.488226e-05 0.9552748 0.9703970
+Done

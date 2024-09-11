@@ -1,0 +1,10 @@
+Wed Sep 11 13:53:48 CDT 2024
+Working directory is /project/haky/users/temi/projects/Enpact/notebooks/run
+Jobid: 23450145
+Running on host midway3-0012.rcc.local
+Starting to run
+['chr22_10580550_10580559', 'chr22_10649788_10649797', 'chr22_10936237_10936246']
+INFO - Using multiprocessing to aggregate epigenomic predictions
+INFO - Dimension of collected data is 39781 by 5313
+INFO - Finished saving data to /project/haky/users/temi/projects/Enpact/data/enpact/files/AR_Prostate.arbs_epigenome.csv.gz
+Done
