@@ -1,17 +1,17 @@
 ---
-title: "Prepare Baca's CWAS models and creating DBs"
+title: "Reproducing the Enpact data and results"
 author: "Temi"
-description: "..."
-date: 'Tues Aug 8 2023'
+description: "This notebook contains steps and codes to reproduce, as much as possible, the Enpact paper results"
+date: 'Wed Sep 11 2024'
 html:
     self-contained: true
     code-background: true
 fig-format: svg
 ---
 
-# Introduction
-
-Here, I explore Baca's CWAS models, and create necessary DBs suitable in a Predixcan framework
+```{r}
+knitr::opts_chunk$set(eval = F, echo = TRUE, message = TRUE, warning = TRUE, cache = TRUE)
+```
 
 ```{r}
 setwd('/project/haky/users/temi/projects/Enpact/notebooks')
@@ -24,6 +24,10 @@ library(dplyr)
 library(RSQLite)
 library(rtracklayer)
 library(GenomicRanges)
+library(magrittr)
+library(yaml)
+library(fpeek)
+library(purrr)
 ```
 
 ```{r}
@@ -33,23 +37,133 @@ tdate <- '2024-04-17'
 base_dir <- '/project2/haky/temi/projects/TFXcan/baca_cwas'
 data_dir <- '/project/haky/users/temi/projects/Enpact'
 
-
-
 output_dir <- glue('{base_dir}/data')
 files_dir <- glue('{data_dir}/files')
 if(!(dir.exists(files_dir))){
     dir.create(files_dir, recursive = T)
 }
+```
+
+# Introduction
+In this notebook, I detail steps to re-create some of the data/results in the Enpact paper. I have set this notebook not to run when rendering. So, it will show you the code and markdown text, but not run the code.
+
+# Train Enpact models
+
+## Prepare the metadata and files
+
+```{r}
+homerdb <- data.table::fread(file.path(data_dir, 'metadata', 'motifTable.txt'), header = T) %>%
+    dplyr::filter(!grepl(',', `Gene Symbol`), !`Gene Symbol` %in% c( "-", "?")) %>%
+    dplyr::select(Filename, Consensus, symbol=`Gene Symbol`) %>%
+    dplyr::filter(symbol %in% c('AR', 'FOXA1', 'GATA2', 'HOXB13'))
+homerdb
+```
+
+```{r}
+mt <- data.table::fread(file.path(data_dir, 'metadata', 'human_factor_full_QC.txt')) %>%
+    dplyr::filter(Tissue_type != 'None', !is.na(PeaksUnionDHSRatio), FRiP > 0.01) %>%
+    dplyr::filter(!grepl('-', Factor, fixed = T)) %>%
+    dplyr::filter(Factor %in% homerdb$symbol)
+
+idt <- mt %>%
+    dplyr::filter(Factor %in% c('AR', 'FOXA1', 'GATA2', 'HOXB13'), Tissue_type == 'Prostate') %>%
+    dplyr::group_by(Factor, Tissue_type) %>%
+    dplyr::group_split() 
+```
+
+```{r}
+
+ldt <- list()
+
+for(i in seq_along(idt)){
+    fdt <- idt[[i]]
+    tissuename <- unique(fdt$Tissue_type)
+    tissuename <- gsub(' ', '', tissuename)
+    tfname <- unique(fdt$Factor)
+    dcids <- fdt$DCid
+
+    if(!tfname %in% names(ldt)){
+        ldt[[as.name(tfname)]] <- list()
+        ldt[[as.name(tfname)]][['peakFiles']] <- list()
+        ldt[[as.name(tfname)]][['peakFiles']][[as.name(tissuename)]] <-  paste0(dcids, '_sort_peaks.narrowPeak.bed')
+        
+    } else {
+        ldt[[as.name(tfname)]][['peakFiles']][[as.name(tissuename)]] <-  paste0(dcids, '_sort_peaks.narrowPeak.bed')
+    }
+}
+
+```
+
+```{r}
+factors_motifs <- homerdb %>%
+    dplyr::group_by(symbol) %>%
+    dplyr::group_split()
+ndt <- c()
+mdt <- lapply(factors_motifs, function(edt){
+    res <- list()
+    res[['motifFiles']] <- edt$Filename
+    ndt <<- append(ndt, unique(edt$symbol))
+    return(res)
+})
+names(mdt) <- ndt
+```
+
+```{r}
+common_names <- intersect(names(ldt), names(mdt))
+peakslist <- ldt[common_names]
+motifslist <- mdt[common_names]
+```
+
+
+```{r}
+enpact_models_config <- mapply(c, peakslist, motifslist)
+```
+
+```{r}
+
+# Modified from: https://stackoverflow.com/questions/74655073/how-to-effectively-join-two-lists-elementwise-by-element-name
+cat_lists <- function(list1, list2) {  
+  keys <- unique(c(names(list1), names(list2)))
+  map2(list1[keys], list2[keys], c) |>
+    set_names(keys)  
+
+}
+
+enlist <- purrr::reduce(list(motifslist, peakslist), cat_lists)
+# minimal_ex <- base::Filter(Negate(is.null), minimal_ex)
+```
+
+-- Filter for the following TFs: AR, FOXA1, HOXB13, and GATA2 in prostate tissues
+
+```{r}
+tfs_ex <- enlist[c('AR', 'FOXA1', 'HOXB13', 'GATA2')]
+tfs_ex <- base::Filter(Negate(is.null), tfs_ex)
+
+yaml::write_yaml(tfs_ex, file = file.path(data_dir, 'metadata', 'enpact_models_to_train.yaml'))
+
+# prepare the metadata 
+mtdt <- sapply(gsub('.peakFiles.', '_', names(rapply(peakslist, function(x) head(x, 1)))), base::strsplit, '_') |> unname() %>% do.call('rbind', .) %>% as.data.frame()
+colnames(mtdt) <- c('assay', 'context')
+
+data.table::fwrite(mtdt, file = file.path(data_dir, 'metadata', 'enpact_models_to_train.tsv'), sep = '\t', row.names =F, col.names =T, quote = F)
+```
+
+These files created and saved are used to train the DL-based Enpact models.
+
+Steps required to train Enpact models are [here](https://github.com/hakyimlab/TFPred-snakemake). There is a minimal example to follow. As well as the necessary scripts to run the training for AR, FOXA1, HOXB13, and GATA2 in prostate tissues.
+
+# Prepare Baca's CWAS models in sqlite and create the necessary databases
+```{r}
 transcription_factor <- 'AR'
 ```
 
-- the CWAS weights for AR
+-- the CWAS weights for AR
 ```{r}
 ar_zip <- '/project2/haky/Data/baca_cwas/cwas_weights/AR.zip'
 print(file.exists(ar_zip))
 ```
 
-First unzip the file
+-- First unzip the file
 ```{r}
 
 if(!dir.exists(glue('{output_dir}/{transcription_factor}'))){
@@ -68,9 +182,7 @@ ar_files_locus[1:5]
 
 ```
 
--- read weights 
-
-Next, read the files `.wgt` files
+-- read weights; Next, read the files `.wgt` files
 ```{r}
 out <- purrr::map(.x=seq_along(ar_files_locus), .f=function(i){
     locus <- ar_files_locus[i]
@@ -97,15 +209,13 @@ cwas_db <- do.call('rbind', out)
 dim(cwas_db) ; cwas_db[1:5, ]
 ```
 
-- write out the weights
+-- write out the weights
 ```{r}
 data.table::fwrite(cwas_db, file=glue('{files_dir}/{transcription_factor}_baca_cwas_weights.hg19.{tdate}.txt.gz'), col.names=T, row.names=F, quote=F, compress='gzip',sep = '\t')
 cwas_db <- data.table::fread(glue('{files_dir}/{transcription_factor}_baca_cwas_weights.hg19.{tdate}.txt.gz'))
 ```
 
-
-- read and write out the extras
-### Read in the cv performance
+-- read and write out the extras
 
 ```{r}
 out <- purrr::map(.x=seq_along(ar_files_locus), .f=function(i){
@@ -131,9 +241,9 @@ dim(cvperf_dt) ; cvperf_dt[1:5, ]
 data.table::fwrite(cvperf_dt, file=glue('{files_dir}/{transcription_factor}_baca_cwas_extras.hg19.{tdate}.txt.gz'), col.names=T, row.names=F, quote=F, compress='gzip',sep = '\t')
 ```
 
-- map the loci to hg38 from hg19
+-- map the loci to hg38 from hg19
 
-### Bed mappings
+### Bed mappings i.e. liftover the arbs' coordinates from hg19 to hg38
 
 ```{r}
 #write out the bed files
@@ -187,7 +297,7 @@ data.table::fwrite(bed_mappings, file=glue('{data_dir}/files/baca_cwas_arbs_mapp
 ```
 
 
-### SNP mappings
+### SNP mappings i.e. liftover the snps' coordinates from hg19 to hg38
 
 ```{r}
 # write out the cwas database snps
@@ -228,7 +338,7 @@ snp_mappings <- dplyr::inner_join(hg19_bed, hg38_bed, by = c('arbs.hg19' = 'arbs
 data.table::fwrite(snp_mappings, file=glue('{data_dir}/files/baca_cwas_snp_mappings.txt'), col.names=T, row.names=F, quote=F, sep='\t')
 ```
 
-# Now, you can write out the db and save
+-- Now, you can write out the db and save
 
 ```{r}
 baca_models <- c('lasso', 'lasso.as', 'lasso.plasma', 'top1.as', 'top1.qtl', 'top1')
@@ -239,8 +349,7 @@ db_folder_chr <- glue('{data_dir}/models/cwas/db_folder_chr')
 if(!dir.exists(db_folder_chr)){dir.create(db_folder_chr)}
 ```
 
-
-Predict_db format
+### You have to save in predictDB format
 
 ```{r}
 snp_mappings <- data.table::fread(glue('{data_dir}/files/baca_cwas_snp_mappings.txt'))
@@ -302,13 +411,11 @@ baca_weights_list <- purrr::map(.x=baca_models, function(each_m){
         dplyr::select(locus, measure, transcription_factor, n_snps_in_window, n.snps.in.model, pred.perf.qval, all_of(each_m)) %>% 
         tidyr::pivot_wider(names_from = 'measure', values_from = each_m) %>% 
         dplyr::relocate(c(pval, rsq), .after = locus) %>%
-        dplyr::filter(locus %in% weights_dt$locus)
-
-    model_weights <- model_weights %>%
-        dplyr::mutate()
+        dplyr::filter(locus %in% weights_dt$locus) %>%
+        dplyr::rename(gene = locus, genename = transcription_factor, pred.perf.R2 = rsq, pred.perf.pval = pval)
 
     each_db <- DBI::dbConnect(RSQLite::SQLite(), glue('{db_folder}/baca_cwas_{each_m}.hg38.db'))
-    dbWriteTable(each_db, "extra", baca_extra, overwrite=T)
+    dbWriteTable(each_db, "extra", edt, overwrite=T)
     dbWriteTable(each_db, "weights", model_weights, overwrite=T)
     dbDisconnect(each_db)
 
@@ -317,8 +424,18 @@ baca_weights_list <- purrr::map(.x=baca_models, function(each_m){
 
 # names(baca_weights_list) <- baca_models
 ```
+-- see an example
+```{r}
+# '/project2/haky/temi/projects/TFXcan/baca_cwas/db_folder/baca_cwas_lasso.db'
+mydb <- dbConnect(SQLite(), glue('{db_folder}/baca_cwas_lasso.hg38.db'))
+ex <- dbGetQuery(mydb, 'SELECT * FROM extra')
+wt <- dbGetQuery(mydb, 'SELECT * FROM weights')
+ex |> head(); wt |> head()
 
-## Predict CWAS scores using these models
+dbDisconnect(mydb)
+```
+
+# Predict CWAS scores using these models
 
 ```{r}
 db_folder <- '/project/haky/users/temi/projects/Enpact/models/cwas/db_folder'
@@ -330,20 +447,148 @@ if(!dir.exists(output_folder)){dir.create(output_folder, recursive = T)}
 ```
 
 ```{r}
+# if needed, you should edit the sbatch file: {data_dir}/src/predictCWASscores.sbatch
 cmd <- glue('sbatch {data_dir}/src/predictCWASscores.sbatch {db_folder} {txt_genotypes} {txt_samples} {exec_file} {output_folder}')
 cmd
 ```
 
 ```{r}
-system(cmd)
+system(cmd) ; system('squeue -u temi')
 ```
 
+- prepare the file in a simple matrix
 
+```{r}
+# read in the individual mappings
+samples_metadata <- data.table::fread(file.path(data_dir, 'metadata', 'baca_samples_mappings.metadata.txt'))
 
+cwas_scores <- data.table::fread(glue('{output_folder}/top1.hg38/baca_cwas_predict.txt')) %>%
+    dplyr::select(-FID) %>%
+    tibble::column_to_rownames('IID') %>%
+    t() %>% as.data.frame()
+
+cwas_mat <- cwas_scores[,]
+
+colnames(cwas_mat) <- gsub('UW_PDX_172', 'UW_PDX_170_2', colnames(cwas_mat))
+colnames(cwas_mat) <- gsub('UW_PDX_173', 'UW_PDX_170_3', colnames(cwas_mat))
+colnames(cwas_mat) <- samples_metadata[match(colnames(cwas_mat), samples_metadata$vcf), ]$id
+cwas_mat <- cwas_mat %>% tibble::rownames_to_column('locus')
+```
+
+```{r}
+data.table::fwrite(cwas_mat, file=glue('{data_dir}/files/baca_cwas_scores.hg38.txt.gz'), col.names=T, row.names=F, quote=F, compress='gzip', sep='\t')
+```
+
+# Predict Enpact scores using the DL-based Enpact model
+The steps here are involved. 
+
+1. Get epigenomic features for all Baca individuals with Enformer. In this paper, we used [this pipeline]().
+2. With the DL-based Enpact model, predict the Enpact scores using [this pipeline](https://github.com/hakyimlab/enpact-predict-snakemake)
+
+# Train a SNP-based Enpact model
+
+1. Get epigenomic features across 521 EUR individuals with Enformer; In this paper, we used [this pipeline]().
+2. With the DL-based Enpact model, predict the Enpact scores using [this pipeline](https://github.com/hakyimlab/enpact-predict-snakemake)
+3. Prepare the matrix and data for the SNP-based Enpact model such that they are compatible with predictDB format
+4. Train the SNP-based Enpact model using [this pipeline]()
+
+# Predict Enpact scores using the SNP-based Enpact model
+
+```{r}
+db_name <- 'EUR_AR_Prostate_logistic'
+model_db <- '/project/haky/users/temi/projects/Enpact/models/lenpact/predict_db_EUR_AR_Prostate_logistic_filtered.db'
+txt_genotypes <- '/project2/haky/Data/baca_cwas/vcfs/hg38/formatted_geno/all_chrs.text_dosages.txt.gz'
+txt_samples <- '/project2/haky/Data/baca_cwas/vcfs/hg38/formatted_geno/samples.text_dosages.txt'
+exec_file <- '/beagle3/haky/users/temi/software/MetaXcan/software/Predict.py'
+output_folder <- "/project/haky/users/temi/projects/Enpact/data/baca_lenpact/output"
+if(!dir.exists(output_folder)){dir.create(output_folder, recursive = T)}
+```
+
+```{r}
+# if needed, you should edit the sbatch file: {data_dir}/src/predictCWASscores.sbatch
+cmd <- glue('sbatch {data_dir}/src/predictENPACTscores.sbatch {db_name} {model_db} {txt_genotypes} {txt_samples} {exec_file} {output_folder}')
+cmd
+```
+
+```{r}
+system(cmd) ; system('squeue -u temi')
+```
+
+# Running TFXcan on prostate cancer data
+You can download the GWAS summary statistic from the CWAS paper repo [here](https://github.com/scbaca/cwas/blob/master/gwas_data/ProstateCancer_Meta_Schumacher2018.nodup.sumstats.gz) or, better still, from the [GWAS catalog](https://www.ebi.ac.uk/gwas/publications/29892016). This is [the direct link](https://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/GCST006001-GCST007000/GCST006085/harmonised/29892016-GCST006085-EFO_0001663.h.tsv.gz)
+
+-- If you have/want to download from the GWAS catalog, this following scripts should help with processing
+```{r}
+gwas_data <- file.path(data_dir, 'data', 'sumstats', '29892016-GCST006085-EFO_0001663.h.tsv.gz')
+dir.create(dirname(gwas_data), recursive = F)
+if(!file.exists(gwas_data)){
+    download.file('https://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/GCST006001-GCST007000/GCST006085/harmonised/29892016-GCST006085-EFO_0001663.h.tsv.gz', destfile = gwas_data)
+}
+```
+
+-- process the downloaded file. I have processed this file in accordance with the weights data from the SNP-based Enpact model. So, you will need to read in the models and use the data to filter for compatible SNPs.
+
+```{r}
+pcr_sumstat <- data.table::fread(gwas_data)
+dim(pcr_sumstat); pcr_sumstat[1:5, 1:10]
+```
+-- read in the lEnpact weights
+```{r}
+# model_db <- file.path(data_dir, 'models', 'lenpact', 'predict_db_EUR_AR_Prostate_logistic_filtered.db')
+enpactdb <- dbConnect(SQLite(), model_db)
+weights <- dbGetQuery(enpactdb, 'SELECT * FROM weights')
+dbDisconnect(enpactdb)
+```
+
+reformat the file and filter for only those with variant Id in the weights data
+```{r}
+pcgss <- pcr_sumstat %>% 
+    dplyr::select(chrom=hm_chrom, variant_id=hm_variant_id, rsid=hm_rsid, pos=hm_pos, A2=hm_other_allele, A1=hm_effect_allele, beta=hm_beta, p_value=p_value, se=standard_error, maf=hm_effect_allele_frequency) %>% 
+    dplyr::filter(!(is.na(variant_id) | is.na(rsid) | is.na(pos))) %>%
+    dplyr::mutate(zscore=beta/se) %>% 
+    dplyr::filter(variant_id %in% weights$varID)
+
+pcgss[1:5, 1:5]; dim(pcgss)
+```
+
+```{r}
+output_folder <- file.path(data_dir, 'data', 'sumstats')
+if(!dir.exists(output_folder)){
+    dir.create(output_folder, recursive=T)
+}
+
+pcgss %>% split(.$chrom) %>% imap(~data.table::fwrite(.x, glue('{output_folder}/chr{.y}_Schumacher.gwas_ss.txt.gz'), compress='gzip', row.names=F, quote=F, sep = '\t'))
+```
+
+-- Now, you can run TFXcan on the prostate cancer data
+
+```{r}
+db_name <- 'EUR_AR_Prostate_logistic'
+model_db <- file.path(data_dir, 'models/lenpact/predict_db_EUR_AR_Prostate_logistic_filtered.db')
+covariances <- file.path(data_dir, 'models/lenpact/Covariances.varID.txt')
+gwas_folder <- file.path(data_dir, 'data/sumstats')
+gwas_file_pattern <- ".*_Schumacher.gwas_ss.txt.gz"
+exec_file <- '/beagle3/haky/users/temi/software/MetaXcan/software/SPrediXcan.py'
+output_file <- file.path(data_dir, 'data', 'tfxcan', 'EUR_AR_Prostate_logistic.TFXcan.prostate_cancer_risk.csv')
+if(!dir.exists(dirname(output_file))){dir.create(dirname(output_file), recursive = T)}
+```
+
+```{r}
+cmd <- glue('sbatch {data_dir}/src/sTFXcan.sbatch {db_name} {model_db} {covariances} {gwas_folder} {gwas_file_pattern} {exec_file} {output_file}')
+cmd
+```
+
+```{r}
+system(cmd) ; system('squeue -u temi')
+```
+
+# Running TWAS on prostate cancer data
+
+This is very similar to using the PrediXcan pipeline. You will need to download the TWAS weights from the [PrediXcan website](https://predictdb.org/). You can use the [GTEx v8 weights](https://predictdb.org/download/weights/GTEx_V8_HapMap-2017-11-29.tar.gz) or the [GTEx v7 weights](https://predictdb.org/download/weights/GTEx_V7_HapMap-2017-11-29.tar.gz).
 
 
 ```{r}
-knitr::knit_quit()
+knitr::knit_exit()
 ```
 
 

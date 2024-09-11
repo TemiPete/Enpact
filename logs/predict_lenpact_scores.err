@@ -1,0 +1,18 @@
+INFO - Loading samples
+INFO - Loading model
+INFO - Preparing genotype dosages
+INFO - Setting whitelist from available models
+INFO - Processing genotypes
+INFO - Preparing prediction
+INFO - Couldn't import h5py_cache. Anyway, this dependency should be removed. It has been folded into h5py
+Level 9 - Processing Dosage geno /project2/haky/Data/baca_cwas/vcfs/hg38/formatted_geno/all_chrs.text_dosages.txt.gz
+INFO - 10 % of models' snps used
+INFO - 20 % of models' snps used
+INFO - 30 % of models' snps used
+INFO - 40 % of models' snps used
+INFO - 50 % of models' snps used
+INFO - 54 % of models' snps used
+INFO - Storing prediction
+INFO - Saving prediction as a text file
+INFO - Saving summary
+INFO - Successfully predicted expression in 190.0673932712525 seconds

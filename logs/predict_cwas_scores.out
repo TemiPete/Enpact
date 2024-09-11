@@ -1,0 +1,19 @@
+Wed Sep 11 08:07:47 CDT 2024
+
+Working directory is /project/haky/users/temi/projects/Enpact/notebooks/run
+Jobid: 23445896
+Running on host midway3-0191.rcc.local
+Starting to run
+INFO - using this mpirun: /software/openmpi-4.1.0-el8-x86_64/bin/mpirun
+INFO - Job 1 running on midway3-0191 using db.1
+INFO - Running lasso.as.hg38
+INFO - Job 2 running on midway3-0192 using db.2
+INFO - Running lasso.hg38
+INFO - Job 3 running on midway3-0193 using db.3
+INFO - Running lasso.plasma.hg38
+INFO - Job 4 running on midway3-0194 using db.4
+INFO - Running top1.as.hg38
+INFO - Job 5 running on midway3-0195 using db.5
+INFO - Running top1.hg38
+INFO - Job 6 running on midway3-0196 using db.6
+INFO - Running top1.qtl.hg38

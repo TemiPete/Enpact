@@ -1,0 +1,132 @@
+INFO - Loading samples
+INFO - Loading model
+INFO - Loading samples
+INFO - Loading model
+INFO - Preparing genotype dosages
+INFO - Setting whitelist from available models
+INFO - Processing genotypes
+INFO - Preparing prediction
+INFO - Loading samples
+INFO - Loading model
+INFO - Preparing genotype dosages
+INFO - Setting whitelist from available models
+INFO - Loading samples
+INFO - Loading model
+INFO - Processing genotypes
+INFO - Preparing prediction
+INFO - Loading samples
+INFO - Loading model
+INFO - Preparing genotype dosages
+INFO - Setting whitelist from available models
+INFO - Processing genotypes
+INFO - Preparing prediction
+INFO - Loading samples
+INFO - Loading model
+INFO - Preparing genotype dosages
+INFO - Setting whitelist from available models
+INFO - Processing genotypes
+INFO - Preparing prediction
+INFO - Preparing genotype dosages
+INFO - Setting whitelist from available models
+INFO - Processing genotypes
+INFO - Preparing prediction
+INFO - Couldn't import h5py_cache. Anyway, this dependency should be removed. It has been folded into h5py
+INFO - Couldn't import h5py_cache. Anyway, this dependency should be removed. It has been folded into h5py
+INFO - Couldn't import h5py_cache. Anyway, this dependency should be removed. It has been folded into h5py
+INFO - Couldn't import h5py_cache. Anyway, this dependency should be removed. It has been folded into h5py
+Level 9 - Processing Dosage geno /project2/haky/Data/baca_cwas/vcfs/hg38/formatted_geno/all_chrs.text_dosages.txt.gz
+Level 9 - Processing Dosage geno /project2/haky/Data/baca_cwas/vcfs/hg38/formatted_geno/all_chrs.text_dosages.txt.gz
+Level 9 - Processing Dosage geno /project2/haky/Data/baca_cwas/vcfs/hg38/formatted_geno/all_chrs.text_dosages.txt.gz
+Level 9 - Processing Dosage geno /project2/haky/Data/baca_cwas/vcfs/hg38/formatted_geno/all_chrs.text_dosages.txt.gz
+INFO - Couldn't import h5py_cache. Anyway, this dependency should be removed. It has been folded into h5py
+Level 9 - Processing Dosage geno /project2/haky/Data/baca_cwas/vcfs/hg38/formatted_geno/all_chrs.text_dosages.txt.gz
+INFO - Preparing genotype dosages
+INFO - Setting whitelist from available models
+INFO - Processing genotypes
+INFO - Preparing prediction
+INFO - Couldn't import h5py_cache. Anyway, this dependency should be removed. It has been folded into h5py
+Level 9 - Processing Dosage geno /project2/haky/Data/baca_cwas/vcfs/hg38/formatted_geno/all_chrs.text_dosages.txt.gz
+INFO - 10 % of models' snps used
+INFO - 10 % of models' snps used
+INFO - 10 % of models' snps used
+INFO - 10 % of models' snps used
+INFO - 10 % of models' snps used
+INFO - 10 % of models' snps used
+INFO - 20 % of models' snps used
+INFO - 20 % of models' snps used
+INFO - 20 % of models' snps used
+INFO - 20 % of models' snps used
+INFO - 20 % of models' snps used
+INFO - 20 % of models' snps used
+INFO - 30 % of models' snps used
+INFO - 30 % of models' snps used
+INFO - 30 % of models' snps used
+INFO - 30 % of models' snps used
+INFO - 30 % of models' snps used
+INFO - 30 % of models' snps used
+INFO - 40 % of models' snps used
+INFO - 40 % of models' snps used
+INFO - 40 % of models' snps used
+INFO - 40 % of models' snps used
+INFO - 40 % of models' snps used
+INFO - 40 % of models' snps used
+INFO - 50 % of models' snps used
+INFO - 50 % of models' snps used
+INFO - 50 % of models' snps used
+INFO - 50 % of models' snps used
+INFO - 50 % of models' snps used
+INFO - 50 % of models' snps used
+INFO - 60 % of models' snps used
+INFO - 60 % of models' snps used
+INFO - 60 % of models' snps used
+INFO - 60 % of models' snps used
+INFO - 60 % of models' snps used
+INFO - 60 % of models' snps used
+INFO - 70 % of models' snps used
+INFO - 70 % of models' snps used
+INFO - 70 % of models' snps used
+INFO - 70 % of models' snps used
+INFO - 70 % of models' snps used
+INFO - 70 % of models' snps used
+INFO - 80 % of models' snps used
+INFO - 80 % of models' snps used
+INFO - 80 % of models' snps used
+INFO - 80 % of models' snps used
+INFO - 80 % of models' snps used
+INFO - 80 % of models' snps used
+INFO - 90 % of models' snps used
+INFO - 90 % of models' snps used
+INFO - 90 % of models' snps used
+INFO - 90 % of models' snps used
+INFO - 90 % of models' snps used
+INFO - 90 % of models' snps used
+INFO - 95 % of models' snps used
+INFO - Storing prediction
+INFO - Saving prediction as a text file
+INFO - 95 % of models' snps used
+INFO - Storing prediction
+INFO - Saving prediction as a text file
+INFO - 95 % of models' snps used
+INFO - Storing prediction
+INFO - Saving prediction as a text file
+INFO - 95 % of models' snps used
+INFO - Storing prediction
+INFO - Saving prediction as a text file
+INFO - 95 % of models' snps used
+INFO - Storing prediction
+INFO - Saving prediction as a text file
+INFO - 95 % of models' snps used
+INFO - Storing prediction
+INFO - Saving prediction as a text file
+INFO - Saving summary
+INFO - Successfully predicted expression in 148.61403282824904 seconds
+INFO - Saving summary
+INFO - Successfully predicted expression in 148.03316327370703 seconds
+INFO - Saving summary
+INFO - Successfully predicted expression in 146.12977047264576 seconds
+INFO - Saving summary
+INFO - Successfully predicted expression in 148.35804405249655 seconds
+INFO - Saving summary
+INFO - Successfully predicted expression in 145.86909008026123 seconds
+INFO - Saving summary
+INFO - Successfully predicted expression in 149.10335528943688 seconds

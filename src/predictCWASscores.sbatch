@@ -11,8 +11,8 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --job-name=predict_baca_with_cwas
 #SBATCH --account=pi-haky
-#SBATCH --output=/project/haky/users/temi/projects/Enpact/predict_cwas_scores.out
-#SBATCH --error=/project/haky/users/temi/projects/Enpact/predict_cwas_scores.err
+#SBATCH --output=/project/haky/users/temi/projects/Enpact/logs/predict_cwas_scores.out
+#SBATCH --error=/project/haky/users/temi/projects/Enpact/logs/predict_cwas_scores.err
 #SBATCH --time=01:30:00	
 #SBATCH --partition=caslake
 
