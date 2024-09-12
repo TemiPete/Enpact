@@ -1,12 +1,31 @@
-Wed Sep 11 14:49:35 CDT 2024
-Working directory is /project/haky/users/temi/projects/Enpact/notebooks/run
-Jobid: 23450868
-Running on host midway3-0012.rcc.local
+Thu Sep 12 13:06:43 CDT 2024
+Working directory is /project/haky/users/temi/run
+Jobid: 23474816
+Running on host midway3-0143.rcc.local
 Starting to run
+Training model
+WARNING: ignoring environment value of R_HOME
+INFO - Reading train data...
+INFO - Found 48 cores but using 12
+INFO - training enet model
+INFO - Starting to build logistic enet model
+
+Call:  glmnet::cv.glmnet(x = X_train, y = y_train$binding_class, type.measure = "auc",      nfolds = opt$nfolds, keep = T, parallel = T, trace.it = F,      family = "binomial", alpha = 0.5) 
+
+Measure: AUC 
+
+       Lambda Index Measure       SE Nonzero
+min 0.0001541    86  0.9193 0.001087    2021
+1se 0.0003243    78  0.9184 0.001072    1377
+INFO - Saving `/project/haky/users/temi/projects/Enpact/models/enpact/HOXB13_Prostate_logistic.enpact.rds`
+[[1]]
+NULL
+
+INFO - Finished with model training and saving
 Evaluating model
 Model found
 WARNING: ignoring environment value of R_HOME
    pp_auc       pp_var       low       upp
-1:  0.966 6.791186e-07 0.9640198 0.9672501
-2:  0.963 1.488226e-05 0.9552748 0.9703970
+1:   0.94 1.329782e-06 0.9378196 0.9423399
+2:   0.92 3.978953e-05 0.9073083 0.9320348
 Done

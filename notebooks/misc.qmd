@@ -501,3 +501,203 @@ extra_dt |> head() ; weights_dt |> head()
 ```{r}
 zcat in.vcf.gz | vcftools_0.1.9/bin/vcf-annotate --fill-type | grep -oP "TYPE=\w+" | sort | uniq -c
 ```
+
+
+
+```{r}
+md <- readRDS('/project/haky/users/temi/Enpact-figures/data/aggByCollect_AR_Prostate.logistic.rds')
+```
+
+```{r}
+a <- data.table::fread('/project/haky/users/temi/Enpact-figures/data/aggByCollect_AR_Prostate.logistic.test_eval.txt.gz')
+
+b <- data.table::fread('/project2/haky/temi/projects/TFPred-snakemake/output/models_eval/cistrome_AR_Prostate_2024-04-23/aggByCollect_AR_Prostate.logistic.test_eval.txt.gz')
+
+c <- data.table::fread('/project2/haky/temi/projects/TFPred-snakemake/output/models_eval/cistrome_AR_Prostate_2024-04-23/aggByCollect_AR_Prostate.logistic.train_eval.txt.gz')
+```
+
+
+```{r}
+b %>%
+    dplyr::select(locus, binding_class, binding_count) %>%
+    dplyr::mutate(split = 'test') %>%
+    data.table::fwrite(file=file.path(data_dir, 'data/enpact/files/', 'AR_Prostate.test_arbs.txt.gz'), col.names=T, row.names=F, quote=F, compress='gzip', sep='\t')
+
+c %>%
+    dplyr::select(locus, binding_class, binding_count) %>%
+    dplyr::mutate(split = 'train') %>%
+    data.table::fwrite(file=file.path(data_dir, 'data/enpact/files/', 'AR_Prostate.train_arbs.txt.gz'), col.names=T, row.names=F, quote=F, compress='gzip', sep='\t')
+```
+
+
+```{r}
+bind_rows(
+    dplyr::select(b, locus, binding_class, binding_count) %>%
+    dplyr::mutate(split = 'test'),
+    dplyr::select(c, locus, binding_class, binding_count) %>%
+    dplyr::mutate(split = 'train')
+) %>%
+    data.table::fwrite(file=file.path(data_dir, 'data/enpact/files/', 'AR_Prostate.arbs_groundtruth.txt.gz'), col.names=T, row.names=F, quote=F, compress='gzip', sep='\t')
+```
+
+
+```{r}
+data.table::fread(file.path(data_dir, 'data/enpact/files/', 'AR_Prostate.arbs_groundtruth.txt.gz')) %>%
+    dplyr::select(locus) %>%
+    data.table::fwrite(file=file.path(data_dir, 'data/enpact/files/', 'AR_Prostate.arbs_predict.txt'), col.names=F, row.names=F, quote=F, sep='\t')
+```
+
+
+```{r}
+input <- file.path(data_dir, 'data/enpact/files', 'AR_Prostate.arbs_predict.txt')
+reference_epigenome_dir <- '/project2/haky/Data/enformer-reference-epigenome'
+output <- file.path(data_dir, 'data/enpact/files', 'AR_Prostate.arbs_epigenome.csv.gz')
+exec_py <- '/project/haky/users/temi/projects/TFPred-snakemake/workflow/src/aggregate_epigenomes.py'
+
+cmd <- glue("sbatch {data_dir}/src/infer.sbatch {exec_py} {input} {reference_epigenome_dir} {output} --use_multiprocessing")
+
+cmd
+```
+
+
+```{r}
+system(cmd) ; system('squeue -u temi')
+```
+
+
+```{r}
+dtepi <- data.table::fread('/project/haky/users/temi/projects/Enpact/data/enpact/files/cistrome_aggByCollect_AR_Prostate.csv.gz')
+gt <- data.table::fread(file.path(data_dir, 'data/enpact/files', 'AR_Prostate.arbs_groundtruth.txt.gz'))
+gt_train <- gt %>% dplyr::filter(split == 'train')
+gt_test <- gt %>% dplyr::filter(split == 'test')
+```
+
+
+```{r}
+dt_train <- dtepi %>% dplyr::filter(id %in% gt_train$locus)
+dt_gt <- gt_train %>% dplyr::select(-split)
+dt_train <- inner_join(dt_gt, dt_train, by=c('locus' = 'id'))
+
+dim(dt_train); dt_train[1:5, 1:10]
+
+data.table::fwrite(dt_train, '/project/haky/users/temi/projects/Enpact/data/enpact/training/AR_Prostate.train_epigenome.csv.gz', col.names=T, row.names=F, quote=F, compress='gzip', sep='\t')
+```
+
+
+```{r}
+dt_test <- dtepi %>% dplyr::filter(id %in% gt_test$locus)
+dt_gt <- gt_test %>% dplyr::select(-split)
+dt_test <- inner_join(dt_gt, dt_test, by=c('locus' = 'id'))
+dim(dt_test); dt_test[1:5, 1:10]
+data.table::fwrite(dt_test, '/project/haky/users/temi/projects/Enpact/data/enpact/training/AR_Prostate.test_epigenome.csv.gz', col.names=T, row.names=F, quote=F, compress='gzip', sep='\t')
+```
+
+FOXA1 
+
+```{r}
+a <- data.table::fread('/project/haky/users/temi/Enpact-figures/data/aggByCollect_FOXA1_Prostate.logistic.test_eval.txt.gz')
+
+b <- data.table::fread('/project2/haky/temi/projects/TFPred-snakemake/output/models_eval/cistrome_FOXA1_Prostate_2024-04-23/aggByCollect_FOXA1_Prostate.logistic.test_eval.txt.gz')
+
+c <- data.table::fread('/project2/haky/temi/projects/TFPred-snakemake/output/models_eval/cistrome_FOXA1_Prostate_2024-04-23/aggByCollect_FOXA1_Prostate.logistic.train_eval.txt.gz')
+```
+
+
+```{r}
+b %>%
+    dplyr::select(locus, binding_class, binding_count) %>%
+    dplyr::mutate(split = 'test') %>%
+    data.table::fwrite(file=file.path(data_dir, 'data/enpact/files/', 'FOXA1_Prostate.test_arbs.txt.gz'), col.names=T, row.names=F, quote=F, compress='gzip', sep='\t')
+
+c %>%
+    dplyr::select(locus, binding_class, binding_count) %>%
+    dplyr::mutate(split = 'train') %>%
+    data.table::fwrite(file=file.path(data_dir, 'data/enpact/files/', 'FOXA1_Prostate.train_arbs.txt.gz'), col.names=T, row.names=F, quote=F, compress='gzip', sep='\t')
+```
+
+
+```{r}
+bind_rows(
+    dplyr::select(b, locus, binding_class, binding_count) %>%
+    dplyr::mutate(split = 'test'),
+    dplyr::select(c, locus, binding_class, binding_count) %>%
+    dplyr::mutate(split = 'train')
+) %>%
+    data.table::fwrite(file=file.path(data_dir, 'data/enpact/files/', 'FOXA1_Prostate.arbs_groundtruth.txt.gz'), col.names=T, row.names=F, quote=F, compress='gzip', sep='\t')
+```
+
+
+```{r}
+dtepi <- data.table::fread('/project/haky/users/temi/projects/Enpact/data/enpact/files/cistrome_aggByCollect_FOXA1_Prostate.csv.gz')
+gt <- data.table::fread(file.path(data_dir, 'data/enpact/files', 'FOXA1_Prostate.arbs_groundtruth.txt.gz'))
+gt_train <- gt %>% dplyr::filter(split == 'train')
+gt_test <- gt %>% dplyr::filter(split == 'test')
+```
+
+
+```{r}
+dt_train <- dtepi %>% dplyr::filter(id %in% gt_train$locus)
+dt_gt <- gt_train %>% dplyr::select(-split)
+dt_train <- inner_join(dt_gt, dt_train, by=c('locus' = 'id'))
+
+dim(dt_train); dt_train[1:5, 1:10]
+
+data.table::fwrite(dt_train, '/project/haky/users/temi/projects/Enpact/data/enpact/training/FOXA1_Prostate.train_epigenome.csv.gz', col.names=T, row.names=F, quote=F, compress='gzip', sep='\t')
+```
+
+
+```{r}
+dt_test <- dtepi %>% dplyr::filter(id %in% gt_test$locus)
+dt_gt <- gt_test %>% dplyr::select(-split)
+dt_test <- inner_join(dt_gt, dt_test, by=c('locus' = 'id'))
+dim(dt_test); dt_test[1:5, 1:10]
+data.table::fwrite(dt_test, '/project/haky/users/temi/projects/Enpact/data/enpact/training/FOXA1_Prostate.test_epigenome.csv.gz', col.names=T, row.names=F, quote=F, compress='gzip', sep='\t')
+```
+
+```{r}
+for(tf in c('HOXB13', 'GATA2')){
+    aa <- data.table::fread(glue('/project/haky/users/temi/Enpact-figures/data/aggByCollect_{tf}_Prostate.logistic.test_eval.txt.gz'))
+
+    bb <- data.table::fread(glue('/project2/haky/temi/projects/TFPred-snakemake/output/models_eval/cistrome_{tf}_Prostate_2024-04-23/aggByCollect_{tf}_Prostate.logistic.test_eval.txt.gz'))
+
+    cc <- data.table::fread(glue('/project2/haky/temi/projects/TFPred-snakemake/output/models_eval/cistrome_{tf}_Prostate_2024-04-23/aggByCollect_{tf}_Prostate.logistic.train_eval.txt.gz'))
+
+    bb %>%
+    dplyr::select(locus, binding_class, binding_count) %>%
+    dplyr::mutate(split = 'test') %>%
+    data.table::fwrite(file=file.path(data_dir, 'data/enpact/files/', glue('{tf}_Prostate.test_arbs.txt.gz')), col.names=T, row.names=F, quote=F, compress='gzip', sep='\t')
+
+    cc %>%
+        dplyr::select(locus, binding_class, binding_count) %>%
+        dplyr::mutate(split = 'train') %>%
+        data.table::fwrite(file=file.path(data_dir, 'data/enpact/files/', glue('{tf}_Prostate.train_arbs.txt.gz')), col.names=T, row.names=F, quote=F, compress='gzip', sep='\t')
+
+    bind_rows(
+        dplyr::select(bb, locus, binding_class, binding_count) %>%
+        dplyr::mutate(split = 'test'),
+        dplyr::select(cc, locus, binding_class, binding_count) %>%
+        dplyr::mutate(split = 'train')
+    ) %>%
+        data.table::fwrite(file=file.path(data_dir, 'data/enpact/files/', glue('{tf}_Prostate.arbs_groundtruth.txt.gz')), col.names=T, row.names=F, quote=F, compress='gzip', sep='\t')
+
+    dtepi <- data.table::fread(glue('/project/haky/users/temi/projects/Enpact/data/enpact/files/cistrome_aggByCollect_{tf}_Prostate.csv.gz'))
+    gt <- data.table::fread(file.path(data_dir, 'data/enpact/files', glue('{tf}_Prostate.arbs_groundtruth.txt.gz')))
+    gt_train <- gt %>% dplyr::filter(split == 'train')
+    gt_test <- gt %>% dplyr::filter(split == 'test')
+
+    dt_train <- dtepi %>% dplyr::filter(id %in% gt_train$locus)
+    dt_gt <- gt_train %>% dplyr::select(-split)
+    dt_train <- inner_join(dt_gt, dt_train, by=c('locus' = 'id'))
+
+    dim(dt_train); dt_train[1:5, 1:10]
+
+    data.table::fwrite(dt_train, glue('/project/haky/users/temi/projects/Enpact/data/enpact/training/{tf}_Prostate.train_epigenome.csv.gz'), col.names=T, row.names=F, quote=F, compress='gzip', sep='\t')
+
+    dt_test <- dtepi %>% dplyr::filter(id %in% gt_test$locus)
+    dt_gt <- gt_test %>% dplyr::select(-split)
+    dt_test <- inner_join(dt_gt, dt_test, by=c('locus' = 'id'))
+    dim(dt_test); dt_test[1:5, 1:10]
+    data.table::fwrite(dt_test, glue('/project/haky/users/temi/projects/Enpact/data/enpact/training/{tf}_Prostate.test_epigenome.csv.gz'), col.names=T, row.names=F, quote=F, compress='gzip', sep='\t')
+}
+```
+

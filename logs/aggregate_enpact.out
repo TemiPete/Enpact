@@ -1,0 +1,17 @@
+Thu Sep 12 12:30:24 CDT 2024
+Working directory is /project/haky/users/temi/projects/Enpact/src/run
+Jobid: 23473150
+Running on host midway3-0138.rcc.local
+Starting to run
+INFO - Available CPUs are 48
+INFO - Aggregating these: ['aggByCollect']
+INFO - Currently on cistrome
+/project/haky/users/temi/projects/Enpact/data/enpact/files
+INFO - Using parsl.
+Parsl version: 2023.04.17
+INFO - Executing 1 app_futures
+INFO - Aggregation complete for all.
+INFO - Executing 1 app_futures
+INFO - Aggregation complete for all.
+INFO - Executing 1 app_futures
+INFO - Aggregation complete for all.

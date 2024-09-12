@@ -139,13 +139,13 @@ colnames(mtdt) <- c('assay', 'context')
 data.table::fwrite(mtdt, file = file.path(data_dir, 'metadata', 'enpact_models_to_train.tsv'), sep = '\t', row.names =F, col.names =T, quote = F)
 ```
 
-These files created and saved are used to train the DL-based Enpact models.
+These files created above and saved are used to train the DL-based Enpact models.
 
 Steps required to train Enpact models are [here](https://github.com/hakyimlab/TFPred-snakemake). There is a minimal example to follow. As well as the necessary scripts to run the training for AR, FOXA1, HOXB13, and GATA2 in prostate tissues.
 
 # Train DL-based Enpact models using prepared matrix
-You may also train the AR-Prostate Enpact model using the prepared train and test data here:
-
+Alternatively, you may also train the AR-Prostate Enpact model, as well as the others, using the prepared train and test data here:
+-- Train AR_Prostate model
 ```{r}
 train_script <- file.path(data_dir, 'src', 'trainEnpactModel.R')
 evaluate_script <- file.path(data_dir, 'src', 'evaluateEnpactModel.R')
@@ -164,9 +164,67 @@ cmd
 system(cmd) ; system('squeue -u temi')
 ```
 
+-- Train FOXA1_Prostate model
+```{r}
+train_script <- file.path(data_dir, 'src', 'trainEnpactModel.R')
+evaluate_script <- file.path(data_dir, 'src', 'evaluateEnpactModel.R')
+train_data <- file.path(data_dir, 'data', 'enpact/training', 'FOXA1_Prostate.train_epigenome.csv.gz')
+eval_data <- file.path(data_dir, 'data', 'enpact/training', 'FOXA1_Prostate.test_epigenome.csv.gz')
+model_rds <- file.path(data_dir, 'models', 'enpact', 'FOXA1_Prostate_logistic.enpact.rds')
+basename_eval_output <- file.path(data_dir, 'data', 'enpact/evaluations', 'FOXA1_Prostate_logistic.enpact.eval_output')
+```
+
+```{r}
+cmd <- glue('sbatch {data_dir}/src/trainAndEvaluateEnpactModel.sbatch {train_script} {evaluate_script} {train_data} {eval_data} {model_rds} {basename_eval_output}')
+cmd
+```
+
+```{r}
+system(cmd) ; system('squeue -u temi')
+```
+
+-- Train GATA2_Prostate model
+```{r}
+train_script <- file.path(data_dir, 'src', 'trainEnpactModel.R')
+evaluate_script <- file.path(data_dir, 'src', 'evaluateEnpactModel.R')
+train_data <- file.path(data_dir, 'data', 'enpact/training', 'GATA2_Prostate.train_epigenome.csv.gz')
+eval_data <- file.path(data_dir, 'data', 'enpact/training', 'GATA2_Prostate.test_epigenome.csv.gz')
+model_rds <- file.path(data_dir, 'models', 'enpact', 'GATA2_Prostate_logistic.enpact.rds')
+basename_eval_output <- file.path(data_dir, 'data', 'enpact/evaluations', 'GATA2_Prostate_logistic.enpact.eval_output')
+```
+
+```{r}
+cmd <- glue('sbatch {data_dir}/src/trainAndEvaluateEnpactModel.sbatch {train_script} {evaluate_script} {train_data} {eval_data} {model_rds} {basename_eval_output}')
+cmd
+```
+
+```{r}
+system(cmd) ; system('squeue -u temi')
+```
+
+-- Train HOXB13_Prostate model
+```{r}
+train_script <- file.path(data_dir, 'src', 'trainEnpactModel.R')
+evaluate_script <- file.path(data_dir, 'src', 'evaluateEnpactModel.R')
+train_data <- file.path(data_dir, 'data', 'enpact/training', 'HOXB13_Prostate.train_epigenome.csv.gz')
+eval_data <- file.path(data_dir, 'data', 'enpact/training', 'HOXB13_Prostate.test_epigenome.csv.gz')
+model_rds <- file.path(data_dir, 'models', 'enpact', 'HOXB13_Prostate_logistic.enpact.rds')
+basename_eval_output <- file.path(data_dir, 'data', 'enpact/evaluations', 'HOXB13_Prostate_logistic.enpact.eval_output')
+```
+
+```{r}
+cmd <- glue('sbatch {data_dir}/src/trainAndEvaluateEnpactModel.sbatch {train_script} {evaluate_script} {train_data} {eval_data} {model_rds} {basename_eval_output}')
+cmd
+```
+
+```{r}
+system(cmd) ; system('squeue -u temi')
+```
 
 
 # Prepare Baca's CWAS models in sqlite and create the necessary databases
+The AR weights in the CWAS paper were trained using the Fusion pipeline in mind. Here, we prepared the AR weights such that they are compatible with the PredictDB pipeline.
+
 -- the CWAS weights for AR
 ```{r}
 transcription_factor <- 'AR'
@@ -359,8 +417,6 @@ db_folder_chr <- glue('{data_dir}/models/cwas/db_folder_chr')
 if(!dir.exists(db_folder_chr)){dir.create(db_folder_chr)}
 ```
 
-### You have to save in predictDB format
-
 ```{r}
 snp_mappings <- data.table::fread(glue('{data_dir}/files/baca_cwas_snp_mappings.txt'))
 weights_dt <- data.table::fread(file.path(data_dir, 'files', 'AR_baca_cwas_weights.hg19.2024-04-17.txt.gz'))
@@ -447,6 +503,8 @@ dbDisconnect(mydb)
 
 # Predict CWAS scores using these models
 
+Above, we prepared the CWAS models for AR. We can now predict CWAS scores using these models.
+
 ```{r}
 db_folder <- '/project/haky/users/temi/projects/Enpact/models/cwas/db_folder'
 txt_genotypes <- '/project2/haky/Data/baca_cwas/vcfs/hg38/formatted_geno/all_chrs.text_dosages.txt.gz'
@@ -498,6 +556,7 @@ The steps here are involved.
 # Train a SNP-based Enpact model
 
 1. Get epigenomic features across 521 EUR individuals with Enformer; In this paper, we used [this pipeline]().
+     Alternatively, these features can be downloaded from here: [epigenomic features](https://zenodo.org/record/5520737/files/epigenomic_features.tar.gz)
 2. With the DL-based Enpact model, predict the Enpact scores using [this pipeline](https://github.com/hakyimlab/enpact-predict-snakemake)
 3. Prepare the matrix and data for the SNP-based Enpact model such that they are compatible with predictDB format
 4. Train the SNP-based Enpact model using [this pipeline]()
@@ -601,95 +660,3 @@ This is very similar to using the PrediXcan pipeline. You will need to download 
 knitr::knit_exit()
 ```
 
-
-```{r}
-md <- readRDS('/project/haky/users/temi/Enpact-figures/data/aggByCollect_AR_Prostate.logistic.rds')
-```
-
-
-```{r}
-a <- data.table::fread('/project/haky/users/temi/Enpact-figures/data/aggByCollect_AR_Prostate.logistic.test_eval.txt.gz')
-
-b <- data.table::fread('/project2/haky/temi/projects/TFPred-snakemake/output/models_eval/cistrome_AR_Prostate_2024-04-23/aggByCollect_AR_Prostate.logistic.test_eval.txt.gz')
-```
-
-
-```{r}
-c <- data.table::fread('/project2/haky/temi/projects/TFPred-snakemake/output/models_eval/cistrome_AR_Prostate_2024-04-23/aggByCollect_AR_Prostate.logistic.train_eval.txt.gz')
-```
-
-
-```{r}
-b %>%
-    dplyr::select(locus, binding_class, binding_count) %>%
-    dplyr::mutate(split = 'test') %>%
-    data.table::fwrite(file=file.path(data_dir, 'data/enpact/files/', 'AR_Prostate.test_arbs.txt.gz'), col.names=T, row.names=F, quote=F, compress='gzip', sep='\t')
-
-c %>%
-    dplyr::select(locus, binding_class, binding_count) %>%
-    dplyr::mutate(split = 'train') %>%
-    data.table::fwrite(file=file.path(data_dir, 'data/enpact/files/', 'AR_Prostate.train_arbs.txt.gz'), col.names=T, row.names=F, quote=F, compress='gzip', sep='\t')
-```
-
-
-```{r}
-bind_rows(
-    dplyr::select(b, locus, binding_class, binding_count) %>%
-    dplyr::mutate(split = 'test'),
-    dplyr::select(c, locus, binding_class, binding_count) %>%
-    dplyr::mutate(split = 'train')
-) %>%
-    data.table::fwrite(file=file.path(data_dir, 'data/enpact/files/', 'AR_Prostate.arbs_groundtruth.txt.gz'), col.names=T, row.names=F, quote=F, compress='gzip', sep='\t')
-```
-
-
-```{r}
-data.table::fread(file.path(data_dir, 'data/enpact/files/', 'AR_Prostate.arbs_groundtruth.txt.gz')) %>%
-    dplyr::select(locus) %>%
-    data.table::fwrite(file=file.path(data_dir, 'data/enpact/files/', 'AR_Prostate.arbs_predict.txt'), col.names=F, row.names=F, quote=F, sep='\t')
-```
-
-
-```{r}
-input <- file.path(data_dir, 'data/enpact/files', 'AR_Prostate.arbs_predict.txt')
-reference_epigenome_dir <- '/project2/haky/Data/enformer-reference-epigenome'
-output <- file.path(data_dir, 'data/enpact/files', 'AR_Prostate.arbs_epigenome.csv.gz')
-exec_py <- '/project/haky/users/temi/projects/TFPred-snakemake/workflow/src/aggregate_epigenomes.py'
-
-cmd <- glue("sbatch {data_dir}/src/infer.sbatch {exec_py} {input} {reference_epigenome_dir} {output} --use_multiprocessing")
-
-cmd
-```
-
-
-```{r}
-system(cmd) ; system('squeue -u temi')
-```
-
-
-```{r}
-dtepi <- data.table::fread(output)
-gt <- data.table::fread(file.path(data_dir, 'data/enpact/files', 'AR_Prostate.arbs_groundtruth.txt.gz'))
-gt_train <- gt %>% dplyr::filter(split == 'train')
-gt_test <- gt %>% dplyr::filter(split == 'test')
-```
-
-
-```{r}
-dt_train <- dtepi %>% dplyr::filter(id %in% gt_train$locus)
-dt_gt <- gt_train %>% dplyr::select(-split)
-dt_train <- inner_join(dt_gt, dt_train, by=c('locus' = 'id'))
-
-dim(dt_train); dt_train[1:5, 1:10]
-
-data.table::fwrite(dt_train, '/project/haky/users/temi/projects/Enpact/data/enpact/training/AR_Prostate.train_epigenome.csv.gz', col.names=T, row.names=F, quote=F, compress='gzip', sep='\t')
-```
-
-
-```{r}
-dt_test <- dtepi %>% dplyr::filter(id %in% gt_test$locus)
-dt_gt <- gt_test %>% dplyr::select(-split)
-dt_test <- inner_join(dt_gt, dt_test, by=c('locus' = 'id'))
-dim(dt_test); dt_test[1:5, 1:10]
-data.table::fwrite(dt_test, '/project/haky/users/temi/projects/Enpact/data/enpact/training/AR_Prostate.test_epigenome.csv.gz', col.names=T, row.names=F, quote=F, compress='gzip', sep='\t')
-```
